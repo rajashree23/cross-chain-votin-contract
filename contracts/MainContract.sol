@@ -11,7 +11,6 @@ contract MainContract is IXReceiver {
 
     struct ChildContractDetails {
         // connext details
-        address connextContractAddress;
         uint32 domain;
 
         // child contract details
@@ -56,12 +55,10 @@ contract MainContract is IXReceiver {
     }
 
     function addChildContractAddress(
-        address _connextContractAddress,
         uint32 _domain,
         address _childContractAddress
     ) external onlyOwner {
         ChildContractDetails memory newEntry;
-        newEntry.connextContractAddress = _connextContractAddress;
         newEntry.domain = _domain;
         newEntry.childContractAddress = _childContractAddress;
         mapDomainToContract[_domain] = newEntry;
@@ -115,7 +112,7 @@ contract MainContract is IXReceiver {
                     continue;
                 
                 bytes memory callData = abi.encode("send_count", proposalId, voter, optionId);
-                connext.xcall{value: 0}(
+                IConnext(connext).xcall{value: 0}(
                     domains[i],         // _destination: Domain ID of the destination chain
                     mapDomainToContract[domains[i]].childContractAddress,            // _to: address of the target contract
                     address(0),        // _asset: use address zero for 0-value transfers

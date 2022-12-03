@@ -13,7 +13,6 @@ contract ChildContract is IXReceiver {
 
     struct ParentContractDetails {
         // connext details
-        address connextContractAddress;
         uint32 domain;
 
         // parent contract details
@@ -32,8 +31,7 @@ contract ChildContract is IXReceiver {
         _;
     }
 
-    function setParentContractDetails(address _connextContractAddress, uint32 _domain, address _parentContractAddress) public onlyOwner {
-        parentContract.connextContractAddress = _connextContractAddress;
+    function setParentContractDetails(uint32 _domain, address _parentContractAddress) public onlyOwner {
         parentContract.domain = _domain;
         parentContract.parentContractAddress = _parentContractAddress;
     }
@@ -47,7 +45,7 @@ contract ChildContract is IXReceiver {
         uint256 tokenQuantity = getTokenQuantity(msg.sender);
 
         bytes memory callData = abi.encode("vote", _proposalId, msg.sender, _optionId, tokenQuantity);
-        connext.xcall{value: 0}(
+        IConnext(connext).xcall{value: 0}(
             parentContract.domain,         // _destination: Domain ID of the destination chain
             parentContract.parentContractAddress,            // _to: address of the target contract
             address(0),        // _asset: use address zero for 0-value transfers
@@ -71,7 +69,7 @@ contract ChildContract is IXReceiver {
         if (keccak256(bytes(purpose)) == keccak256(bytes("send_count"))) {
             uint256 tokenQuantity = getTokenQuantity(voter);
             bytes memory callData = abi.encode(purpose, proposalId, voter, optionId, tokenQuantity);
-            connext.xcall{value: 0}(
+            IConnext(connext).xcall{value: 0}(
                 parentContract.domain,         // _destination: Domain ID of the destination chain
                 parentContract.parentContractAddress,            // _to: address of the target contract
                 address(0),        // _asset: use address zero for 0-value transfers
