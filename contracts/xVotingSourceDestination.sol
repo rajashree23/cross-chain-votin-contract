@@ -3,7 +3,8 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract xVotingSOurceDestination {
+
+contract xVotingSourceDestination {
     // an event that is called whenever a Candidate is added so the frontend could
     // appropriately display the candidate with the right element id (it is used
     // to vote for the candidate, since it is one of arguments for the function "vote")
