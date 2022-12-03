@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface xVotingSourceDestination {
      
-    function vote(string memory uid, string memory optionID, address _voter) external;
+    function vote(string memory uid, uint optionID, address _voter) external;
 }
 
 contract VotingSource {
@@ -59,12 +59,11 @@ contract VotingSource {
 
      function xVote(
         string[] memory _prop_id,
-        string[] memory _option_id,
+     
         uint256[] memory _chainIds
     ) public {
-        //TODO: Remove it after testing with one chainid
-        // require(_verifyChainIds(_chainIds), "Invalid Chain Id");
-        //change1
+       
+        
         bytes4 selector = bytes4(
             keccak256("vote(string,string,address)")
         );
@@ -75,7 +74,7 @@ contract VotingSource {
             selector,
             // Function data
             _prop_id[i],
-            _option_id[i],
+            i,
             msg.sender
         );
             //get domain and deployer address
@@ -86,7 +85,7 @@ contract VotingSource {
                 xVotingSourceDestination(details.connextContractAddress).vote(
                     // function data needs to be changed
                   _prop_id[i],
-                  _option_id[i],
+                  i,
                   msg.sender
                 );
             } else {
