@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {IConnext} from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IConnext.sol";
 import {IXReceiver} from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IXReceiver.sol";
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MainContract is IXReceiver {
@@ -94,7 +94,7 @@ contract MainContract is IXReceiver {
         uint32 _origin, 
         bytes memory _callData
     ) external returns (bytes memory) { 
-        (string memory purpose, uint256 proposalId,  address voter, uint256 tokenQuantity, uint256 optionId) = abi.decode(_callData, (string, uint256, address, uint256, uint256));
+        (string memory purpose, uint256 proposalId,  address voter, uint256 optionId, uint256 tokenQuantity) = abi.decode(_callData, (string, uint256, address, uint256, uint256));
 
         if(keccak256(bytes(purpose)) == keccak256(bytes("vote"))) {
             require(mapProposalIdToVoterToVoteDetails[proposalId][voter].amount == 0, "Already voted");
@@ -114,7 +114,7 @@ contract MainContract is IXReceiver {
                 if(votedDomain == domains[i])
                     continue;
                 
-                bytes memory callData = abi.encode("send_count", proposalId, voter);
+                bytes memory callData = abi.encode("send_count", proposalId, voter, optionId);
                 connext.xcall{value: 0}(
                     domains[i],         // _destination: Domain ID of the destination chain
                     mapDomainToContract[domains[i]].childContractAddress,            // _to: address of the target contract
