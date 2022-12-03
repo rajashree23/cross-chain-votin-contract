@@ -1,138 +1,196 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
+// contract Vote is ERC20{
+//     using Counters for Counters.Counter;
+//     Counters.Counter private tokenCount;
 
-import {IConnext} from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IConnext.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+//     address public  owner;
+//     address newOwner;
+//     uint256 public  price;
+//     uint256 contractBalance;
+//     string public  _tokenURI;
+//     string _tokenURIBulk;
 
-interface xVotingSourceDestination {
-     
-    function vote(string memory uid, string memory optionID, address _voter) external;
-}
+//     uint256 public constant MAX_CAP = 200;
 
-contract VotingSource {
-    // mapping to store chain id and corresponding address;
-    struct connextContractDetails {
-        //connext contract address
-        address connextContractAddress;
-        //domain
-        uint32 domain;
-        //deployer address
-        address destinationContractAddress;
+//     event OwnershipTransferred(address);
+//     event OwnershipClaimed(address);
+//     event Minted(uint256, address);
+
+//     modifier onlyOwner() {
+//         require(msg.sender == owner, "Only owner can invoke this function");
+//         _;
+//     }
+
+//     constructor(
+//         string memory name,
+//         string memory symbol,
+//         address _owner,
+//         string memory tokenURILocal,
+//         uint256 _price
+//     )ERC20(name, symbol)  {
+//         owner = _owner;
+//         _tokenURI = tokenURILocal;
+//         price = _price;
+//         name=name;
+//         symbol=symbol;
+//     }
+// }
+
+// //Factory Contract
+// contract xVotingSourceDestination {
+//     // struct NFTDetails {
+//     //     string name;
+//     //     string symbol;
+//     //     string tokenURI;
+//     //     uint256 price;
+//     // }
+
+//     // mapping(uint256 => NFTDetails) public nftMapping;
+
+//     // function deploy(
+//     //     string memory name,
+//     //     string memory symbol,
+//     //     string memory tokenURI,
+//     //     uint256 price
+//     // ) external {
+//     //     NFTDetails memory newEntry;
+//     //     newEntry.name = name;
+//     //     newEntry.symbol = symbol;
+//     //     newEntry.tokenURI = tokenURI;
+//     //     newEntry.price = price;
+
+//     //     nftMapping[++index] = newEntry;
+//     // }
+
+//     struct _contract {
+//         uint256 id;
+//         address owner;
+//         address contractAddress;
+//     }
+
+//     _contract[] Contracts;
+//     mapping(address => address[]) addressContractMap;
+
+//     event LaunchNFTContract(address indexed, address indexed);
+
+//     constructor() {}
+
+ 
+
+//     //Returns the NFT contract addresses for a particular owner
+//     function getContract() external view returns (address[] memory) {
+//         return (addressContractMap[msg.sender]);
+//     }
+
+//     //Get all the contract addresses of the various NFT Contracts
+//     function getAllContracts() external view returns (_contract[] memory) {
+//         return Contracts;
+//     }
+// }
+
+// written for Solidity version 0.4.18 and above that doesnt break functionality
+
+contract Voting {
+    // an event that is called whenever a Candidate is added so the frontend could
+    // appropriately display the candidate with the right element id (it is used
+    // to vote for the candidate, since it is one of arguments for the function "vote")
+    event AddedCandidate(uint candidateID);
+
+    // describes a Voter, which has an id and the ID of the candidate they voted for
+    address owner;
+    address tokenAddress;
+    constructor(address _tokenAddress) {
+        owner=msg.sender;
+        tokenAddress = _tokenAddress;
     }
-
-    struct daoProposal{
-        string daoName;
-        string proposalTitle;
-        string proposalDescription;
-        uint voteEndTime;
-    }
-
-
-    mapping(uint256 => connextContractDetails) public mapChainIdToContract;
-    address public owner;
-    IConnext public connext;
-
-    constructor(IConnext _connext) {
-        owner = msg.sender;
-        connext = _connext;
-    }
-
-    modifier onlyOwner() {
+    modifier onlyOwner {
         require(msg.sender == owner);
+
         _;
     }
-
-    function addConextAddress(
-        uint256 _chainId,
-        address _contractAddress,
-        uint32 _domain,
-        address _destinationContractAddress
-    ) external onlyOwner {
-        connextContractDetails memory newEntry;
-        newEntry.connextContractAddress = _contractAddress;
-        newEntry.domain = _domain;
-        newEntry.destinationContractAddress = _destinationContractAddress;
-        mapChainIdToContract[_chainId] = newEntry;
+    struct Voter {
+        string uid; // bytes32 type are basically strings
+        uint candidateIDVote;
+    }
+    // describes a Candidate
+    struct Candidate {
+        string name;
+        string party; 
+        // "bool doesExist" is to check if this Struct exists
+        // This is so we can keep track of the candidates 
+        bool doesExist; 
     }
 
-    // function _verifyChainIds(uint8[] memory _chainIds) internal returns (bool) {
-    //     bool _isValid = true;
-    //     for (uint256 i = 0; i < _chainIds.length(); i++) {
-    //         if (mapChainIdToContract[_chainIds[i]] == 0) _isValid = false;
-    //     }
+    // These state variables are used keep track of the number of Candidates/Voters 
+    // and used to as a way to index them     
+    uint numCandidates; // declares a state variable - number Of Candidates
+    uint numVoters;
 
-    //     return _isValid;
-    // }
+    
+    // Think of these as a hash table, with the key as a uint and value of 
+    // the struct Candidate/Voter. These mappings will be used in the majority
+    // of our transactions/calls
+    // These mappings will hold all the candidates and Voters respectively
+    mapping (uint => Candidate) candidates;
+    mapping (uint => Voter) voters;
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *  These functions perform transactions, editing the mappings *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    function xVote(
-        string[] memory _prop_id,
-        string[] memory _option_id,
-        uint256[] memory _chainIds
-    ) public {
-        //TODO: Remove it after testing with one chainid
-        // require(_verifyChainIds(_chainIds), "Invalid Chain Id");
-        //change1
-        bytes4 selector = bytes4(
-            keccak256("vote(string,string,address)")
-        );
-   
+    function addCandidate(string memory name, string memory party) onlyOwner public {
+        // candidateID is the return variable
+        uint candidateID = numCandidates++;
+        // Create new Candidate Struct with name and saves it to storage.
+        candidates[candidateID] = Candidate(name,party,true);
+        emit AddedCandidate(candidateID);
+    }
 
-        for (uint8 i = 0; i < _chainIds.length; i++) {
-                 bytes memory callData = abi.encodeWithSelector(
-            selector,
-            // Function data
-            _prop_id[i],
-            _option_id[i],
-            msg.sender
-        );
-            //get domain and deployer address
-            connextContractDetails memory details = mapChainIdToContract[
-                _chainIds[i]
-            ];
-            if (_chainIds[i] == 80001) {
-                xVotingSourceDestination(details.connextContractAddress).vote(
-                    // function data needs to be changed
-                  _prop_id[i],
-                  _option_id[i],
-                  msg.sender
-                );
-            } else {
-                //define params as per connext
-                // CallParams memory callParams = CallParams({
-                //     to: details.destinationContractAddress,
-                //     callData: callData,
-                //     originDomain: 1735353714, //originDomain -> polygon Mumbai,
-                //     destinationDomain: details.domain, // gorlie
-                //     agent: msg.sender, // address allowed to execute transaction on destination side in addition to relayers
-                //     recovery: msg.sender, // fallback address to send funds to if execution fails on destination side
-                //     forceSlow: false, // option to force slow path instead of paying 0.05% fee on fast liquidity transfers
-                //     receiveLocal: false, // option to receive the local bridge-flavored asset instead of the adopted asset
-                //     callback: address(0), // zero address because we don't expect a callback
-                //     callbackFee: 0, // fee paid to relayers for the callback; no fees on testnet
-                //     relayerFee: 0, // fee paid to relayers for the forward call; no fees on testnet
-                //     destinationMinOut: 0 // not sending funds so minimum can be 0
-                // });
-                // // wrap it in xcall format
-                // XCallArgs memory xcallArgs = XCallArgs({
-                //     params: callParams,
-                //     transactingAsset: address(0), // 0 address is the native gas token
-                //     transactingAmount: 0, // not sending funds with this calldata-only xcall
-                //     originMinOut: 0 // not sending funds so minimum can be 0
-                // });
-                // call the deployer contracts
-                // relayer Fee is 0 due to test net
-                IConnext(connext).xcall{value: 0}(
-                    details.domain,
-                    details.connextContractAddress,
-                    address(0), //token address
-                    msg.sender,
-                    0,
-                    0,
-                    callData
-                );
-            }
+    function vote(string calldata uid, uint candidateID, address _voter) external {
+        // checks if the struct exists for that candidate
+        if (candidates[candidateID].doesExist == true) {
+            uint voterID = numVoters+IERC20(tokenAddress).balanceOf(_voter); //voterID is the return variable
+            voters[voterID] = Voter(uid,candidateID);
         }
     }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * 
+     *  Getter Functions, marked by the key word "view" *
+     * * * * * * * * * * * * * * * * * * * * * * * * * */
+    
+
+    // finds the total amount of votes for a specific candidate by looping
+    // through voters 
+    function totalVotes(uint candidateID) view public returns (uint) {
+        uint numOfVotes = 0; // we will return this
+        for (uint i = 0; i < numVoters; i++) {
+            // if the voter votes for this specific candidate, we increment the number
+            if (voters[i].candidateIDVote == candidateID) {
+                numOfVotes++;
+            }
+        }
+        return numOfVotes; 
+    }
+
+    function getNumOfCandidates() public view returns(uint) {
+        return numCandidates;
+    }
+
+    function getNumOfVoters() public view returns(uint) {
+        return numVoters;
+    }
+    // returns candidate information, including its ID, name, and party
+    function getCandidate(uint  candidateID) public view returns (uint ,string memory, string memory ) {
+        return (candidateID,candidates[candidateID].name,candidates[candidateID].party);
+    }
 }
+
+// deploy votingSource
+// deploy erc20 token of dummy contract
+// voting contract -> erc20 address
+// votingSource -> addConnext
+// 

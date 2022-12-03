@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
-// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+pragma solidity ^0.8.17;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/extensions/ERC20.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
-// import {CallParams, XCallArgs} from "@connext/nxtp-contracts/contracts/core/connext/libraries/LibConnextStorage.sol";
-
-contract Vote {
+contract Vote is ERC20{
     using Counters for Counters.Counter;
     Counters.Counter private tokenCount;
 
@@ -34,10 +32,12 @@ contract Vote {
         address _owner,
         string memory tokenURILocal,
         uint256 _price
-    ) ERC721(name, symbol) {
+    )ERC20(name, symbol)  {
         owner = _owner;
         _tokenURI = tokenURILocal;
         price = _price;
+        name=name;
+        symbol=symbol;
     }
 
     function grantOwnership(address _newOwner) public onlyOwner {
@@ -67,44 +67,7 @@ contract Vote {
         _tokenURIBulk = _tokenURIBulkMint;
     }
 
-    //Anyone can mint a single NFT from this contract - the tokenURI will be set by the owner
-    function mintSingleNFT(address to) external payable {
-        require(msg.value >= price, "You need to pay to mint the NFT");
-
-        tokenCount.increment();
-        uint256 tokenId = tokenCount.current();
-
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, _tokenURI);
-
-        emit Minted(tokenId, to);
-
-        contractBalance += msg.value;
-    }
-
-    //Only owner can mint bulk NFTs and this is for use cases like print game assets and put it up for sale, etc.
-    function mintBulkNFTs(address[] memory to) external onlyOwner {
-        require(
-            bytes(_tokenURIBulk).length != 0,
-            "Token URI cannot be null for bulk mint"
-        );
-
-        for (uint256 i = 0; i < to.length; i++) {
-            require(
-                MAX_CAP >= tokenCount.current(),
-                "Cannot mint more than 200 tokens"
-            );
-
-            tokenCount.increment();
-            uint256 tokenId = tokenCount.current();
-
-            _safeMint(to[i], tokenId);
-            _setTokenURI(tokenId, _tokenURIBulk);
-
-            emit Minted(tokenId, to[i]);
-        }
-    }
-
+  
     function withdrawFunds() external onlyOwner {
         (bool sent, ) = address(msg.sender).call{value: contractBalance}("");
 
@@ -113,7 +76,7 @@ contract Vote {
 }
 
 //Factory Contract
-contract xNFTLaunchPadDestination {
+contract xVotingSourceDestination {
     // struct NFTDetails {
     //     string name;
     //     string symbol;
@@ -151,31 +114,7 @@ contract xNFTLaunchPadDestination {
 
     constructor() {}
 
-    function deploy(
-        string memory name,
-        string memory symbol,
-        string memory tokenURI,
-        uint price,
-        address owner
-    ) external {
-        NFTContract nftContract = new NFTContract(
-            name,
-            symbol,
-            owner,
-            tokenURI,
-            price
-        );
-        Contracts.push();
-
-        uint256 index = Contracts.length - 1;
-        Contracts[index].owner = owner;
-        Contracts[index].id = index;
-        Contracts[index].contractAddress = address(nftContract);
-
-        addressContractMap[owner].push(address(nftContract));
-
-        emit LaunchNFTContract(address(nftContract), owner);
-    }
+ 
 
     //Returns the NFT contract addresses for a particular owner
     function getContract() external view returns (address[] memory) {
@@ -238,15 +177,15 @@ contract Voting {
      *  These functions perform transactions, editing the mappings *
      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    function addCandidate(string name, string party) onlyOwner public {
+    function addCandidate(string memory name, string memory party) onlyOwner public {
         // candidateID is the return variable
         uint candidateID = numCandidates++;
         // Create new Candidate Struct with name and saves it to storage.
         candidates[candidateID] = Candidate(name,party,true);
-        AddedCandidate(candidateID);
+        emit AddedCandidate(candidateID);
     }
 
-    function vote(string uid, uint candidateID, address _voter) external {
+    function vote(string calldata uid, uint candidateID, address _voter) external {
         // checks if the struct exists for that candidate
         if (candidates[candidateID].doesExist == true) {
             uint voterID = numVoters+IERC20(tokenAddress).balanceOf(_voter); //voterID is the return variable
@@ -280,7 +219,7 @@ contract Voting {
         return numVoters;
     }
     // returns candidate information, including its ID, name, and party
-    function getCandidate(uint candidateID) public view returns (uint,string, string) {
+    function getCandidate(uint  candidateID) public view returns (uint ,string memory, string memory ) {
         return (candidateID,candidates[candidateID].name,candidates[candidateID].party);
     }
 }
