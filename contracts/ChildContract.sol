@@ -32,6 +32,12 @@ contract ChildContract is IXReceiver {
         _;
     }
 
+    function setParentContractDetails(address _connextContractAddress, uint32 _domain, address _parentContractAddress) public onlyOwner {
+        parentContract.connextContractAddress = _connextContractAddress;
+        parentContract.domain = _domain;
+        parentContract.parentContractAddress = _parentContractAddress;
+    }
+
     function getTokenQuantity(address _user) public view returns (uint256) {
         return IERC20(tokenAddress).balanceOf(_user);
     }
