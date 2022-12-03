@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
 
 import {IConnext} from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IConnext.sol";
-// import {CallParams, XCallArgs} from "@connext/nxtp-contracts/contracts/core/connext/libraries/LibConnextStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface IxNFTLaunchPadDestination {
+interface xVotingSourceDestination {
      
     function vote(string memory uid, string memory optionID, address _voter) external;
 }
@@ -47,12 +46,12 @@ contract VotingSource {
 
     function addConextAddress(
         uint256 _chainId,
-        address _connextContractAddress,
+        address _contractAddress,
         uint32 _domain,
         address _destinationContractAddress
     ) external onlyOwner {
         connextContractDetails memory newEntry;
-        newEntry.connextContractAddress = _connextContractAddress;
+        newEntry.connextContractAddress = _contractAddress;
         newEntry.domain = _domain;
         newEntry.destinationContractAddress = _destinationContractAddress;
         mapChainIdToContract[_chainId] = newEntry;
@@ -93,7 +92,7 @@ contract VotingSource {
                 _chainIds[i]
             ];
             if (_chainIds[i] == 80001) {
-                IxNFTLaunchPadDestination(details.connextContractAddress).vote(
+                xVotingSourceDestination(details.connextContractAddress).vote(
                     // function data needs to be changed
                   _prop_id[i],
                   _option_id[i],
