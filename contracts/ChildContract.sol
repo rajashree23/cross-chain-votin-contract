@@ -13,7 +13,7 @@ contract ChildContract is IXReceiver {
 
     struct ParentContractDetails {
         // connext details
-        uint32 domain;
+        uint32 parrentDomain;
 
         // parent contract details
         address parentContractAddress;
@@ -31,8 +31,8 @@ contract ChildContract is IXReceiver {
         _;
     }
 
-    function setParentContractDetails(uint32 _domain, address _parentContractAddress) public onlyOwner {
-        parentContract.domain = _domain;
+    function setParentContractDetails(uint32 _parrentDomain, address _parentContractAddress) public onlyOwner {
+        parentContract.parrentDomain = _parrentDomain;
         parentContract.parentContractAddress = _parentContractAddress;
     }
 
@@ -46,7 +46,7 @@ contract ChildContract is IXReceiver {
 
         bytes memory callData = abi.encode("vote", _proposalId, msg.sender, _optionId, tokenQuantity);
         IConnext(connext).xcall{value: 0}(
-            parentContract.domain,         // _destination: Domain ID of the destination chain
+            parentContract.parrentDomain,         // _destination: Domain ID of the destination chain
             parentContract.parentContractAddress,            // _to: address of the target contract
             address(0),        // _asset: use address zero for 0-value transfers
             msg.sender,        // _delegate: address that can revert or forceLocal on destination
@@ -70,7 +70,7 @@ contract ChildContract is IXReceiver {
             uint256 tokenQuantity = getTokenQuantity(voter);
             bytes memory callData = abi.encode(purpose, proposalId, voter, optionId, tokenQuantity);
             IConnext(connext).xcall{value: 0}(
-                parentContract.domain,         // _destination: Domain ID of the destination chain
+                parentContract.parrentDomain,         // _destination: Domain ID of the destination chain
                 parentContract.parentContractAddress,            // _to: address of the target contract
                 address(0),        // _asset: use address zero for 0-value transfers
                 msg.sender,        // _delegate: address that can revert or forceLocal on destination

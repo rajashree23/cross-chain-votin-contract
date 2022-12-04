@@ -95,7 +95,7 @@ contract MainContract is IXReceiver {
 
         if(keccak256(bytes(purpose)) == keccak256(bytes("vote"))) {
             require(mapProposalIdToVoterToVoteDetails[proposalId][voter].amount == 0, "Already voted");
-            require(daoProposals[proposalId].voteEndTime > block.timestamp, "Voting time ended");
+            // require(daoProposals[proposalId].voteEndTime > block.timestamp, "Voting time ended");
             require(optionId < daoProposals[proposalId].noOfOptions, "Invalid option id");
             
             mapProposalIdToVoterToVoteDetails[proposalId][voter].optionId = optionId;
@@ -129,7 +129,7 @@ contract MainContract is IXReceiver {
     }
 
     function getProposalResult(uint256 _proposalId) external view returns (uint256[] memory) {
-        require(daoProposals[_proposalId].voteEndTime < block.timestamp, "Voting time not ended");
+        // require(daoProposals[_proposalId].voteEndTime < block.timestamp, "Voting time not ended");
         
         uint256[] memory result = new uint256[](daoProposals[_proposalId].noOfOptions);
         for(uint256 i = 0; i < mapProposalIdToVoters[_proposalId].length; i++){
