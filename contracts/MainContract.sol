@@ -83,29 +83,15 @@ contract MainContract is IXReceiver {
         daoProposals.push(newProposal);
     }
 
-    function xReceive(
-        bytes32 _transferId, 
-        uint256 _amount, 
-        address _asset, 
-        address _originSender, 
-        uint32 _origin, 
-        bytes memory _callData
-    ) external returns (bytes memory) { 
-        (string memory purpose, uint256 proposalId,  address voter, uint256 optionId, uint256 tokenQuantity) = abi.decode(_callData, (string, uint256, address, uint256, uint256));
 
-        if(keccak256(bytes(purpose)) == keccak256(bytes("vote"))) {
-            require(mapProposalIdToVoterToVoteDetails[proposalId][voter].amount == 0, "Already voted");
-            // require(daoProposals[proposalId].voteEndTime > block.timestamp, "Voting time ended");
-            require(optionId < daoProposals[proposalId].noOfOptions, "Invalid option id");
-            
-            mapProposalIdToVoterToVoteDetails[proposalId][voter].optionId = optionId;
+    function callChildContract(uint256 optionId, uint256 proposalId, address voter, uint256 tokenQuantity)public payable {
+          mapProposalIdToVoterToVoteDetails[proposalId][voter].optionId = optionId;
             mapProposalIdToVoterToVoteDetails[proposalId][voter].proposalId = proposalId;
             mapProposalIdToVoterToVoteDetails[proposalId][voter].voter = voter;
             mapProposalIdToVoterToVoteDetails[proposalId][voter].amount = tokenQuantity;
 
             mapProposalIdToVoters[proposalId].push(voter);
-
-            uint256 votedDomain = _origin;
+             uint256 votedDomain = _origin;
             // Get tokens count from other contracts
             for(uint256 i = 0; i < domains.length; i++){
                 if(votedDomain == domains[i])
@@ -122,6 +108,27 @@ contract MainContract is IXReceiver {
                     callData           // _callData: the encoded calldata to send
                 );
             }
+
+    }
+
+    function xReceive(
+        bytes32 _transferId, 
+        uint256 _amount, 
+        address _asset, 
+        address _originSender, 
+        uint32 _origin, 
+        bytes memory _callData
+    ) external returns (bytes memory) { 
+        (string memory purpose, uint256 proposalId,  address voter, uint256 optionId, uint256 tokenQuantity) = abi.decode(_callData, (string, uint256, address, uint256, uint256));
+
+        if(keccak256(bytes(purpose)) == keccak256(bytes("vote"))) {
+            require(mapProposalIdToVoterToVoteDetails[proposalId][voter].amount == 0, "Already voted");
+            // require(daoProposals[proposalId].voteEndTime > block.timestamp, "Voting time ended");
+            require(optionId < daoProposals[proposalId].noOfOptions, "Invalid option id");
+
+            callChildContract(optionId ,proposalId,voter,amount );
+            
+           
         } else if (keccak256(bytes(purpose)) == keccak256(bytes("send_count"))) {
             mapProposalIdToVoterToVoteDetails[proposalId][voter].amount += tokenQuantity;
         }
