@@ -84,8 +84,8 @@ contract MainContract is IXReceiver {
     }
 
 
-    function callChildContract(uint256 optionId, uint256 proposalId, address voter, uint256 tokenQuantity)public payable {
-          mapProposalIdToVoterToVoteDetails[proposalId][voter].optionId = optionId;
+    function callChildContract(uint256 optionId, uint256 proposalId, address voter, uint256 tokenQuantity, uint32 _origin)public payable {
+            mapProposalIdToVoterToVoteDetails[proposalId][voter].optionId = optionId;
             mapProposalIdToVoterToVoteDetails[proposalId][voter].proposalId = proposalId;
             mapProposalIdToVoterToVoteDetails[proposalId][voter].voter = voter;
             mapProposalIdToVoterToVoteDetails[proposalId][voter].amount = tokenQuantity;
@@ -119,14 +119,14 @@ contract MainContract is IXReceiver {
         uint32 _origin, 
         bytes memory _callData
     ) external returns (bytes memory) { 
-        (string memory purpose, uint256 proposalId,  address voter, uint256 optionId, uint256 tokenQuantity) = abi.decode(_callData, (string, uint256, address, uint256, uint256));
+        (string memory purpose, uint256 proposalId, uint256 optionId, uint256 tokenQuantity, address voter) = abi.decode(_callData, (string, uint256, uint256,uint256, address));
 
         if(keccak256(bytes(purpose)) == keccak256(bytes("vote"))) {
             require(mapProposalIdToVoterToVoteDetails[proposalId][voter].amount == 0, "Already voted");
             // require(daoProposals[proposalId].voteEndTime > block.timestamp, "Voting time ended");
             require(optionId < daoProposals[proposalId].noOfOptions, "Invalid option id");
 
-            callChildContract(optionId ,proposalId,voter,amount );
+            callChildContract(optionId, proposalId, voter, tokenQuantity, _origin);
             
            
         } else if (keccak256(bytes(purpose)) == keccak256(bytes("send_count"))) {

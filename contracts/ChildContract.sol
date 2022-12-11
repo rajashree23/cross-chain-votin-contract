@@ -13,7 +13,7 @@ contract ChildContract is IXReceiver {
 
     struct ParentContractDetails {
         // connext details
-        uint32 parrentDomain;
+        uint32 parentDomain;
 
         // parent contract details
         address parentContractAddress;
@@ -21,7 +21,7 @@ contract ChildContract is IXReceiver {
     ParentContractDetails parentContract; 
 
     constructor(IConnext _connext, address _tokenAddress) {
-        owner=msg.sender;
+        owner = msg.sender;
         connext = _connext;
         tokenAddress = _tokenAddress;
     }
@@ -31,8 +31,8 @@ contract ChildContract is IXReceiver {
         _;
     }
 
-    function setParentContractDetails(uint32 _parrentDomain, address _parentContractAddress) public onlyOwner {
-        parentContract.parrentDomain = _parrentDomain;
+    function setParentContractDetails(uint32 _parentDomain, address _parentContractAddress) public onlyOwner {
+        parentContract.parentDomain = _parentDomain;
         parentContract.parentContractAddress = _parentContractAddress;
     }
 
@@ -40,15 +40,18 @@ contract ChildContract is IXReceiver {
         return IERC20(tokenAddress).balanceOf(_user);
     }
 
+    //send vote to the main contract
+
+
     function vote(uint256 _proposalId, uint256 _optionId) external {
         // Get ERC 20 tokens count of msg.sender
         uint256 tokenQuantity = getTokenQuantity(msg.sender);
 
-        bytes memory callData = abi.encode("vote", _proposalId, msg.sender, _optionId, tokenQuantity);
+        bytes memory callData = abi.encode("vote", _proposalId, _optionId, tokenQuantity, msg.sender);
         IConnext(connext).xcall{value: 0}(
-            parentContract.parrentDomain,         // _destination: Domain ID of the destination chain
+            parentContract.parentDomain,         // _destination: Domain ID of the destination chain
             parentContract.parentContractAddress,            // _to: address of the target contract
-            address(0),        // _asset: use address zero for 0-value transfers
+            address(0),        // _asset: address of the token contract
             msg.sender,        // _delegate: address that can revert or forceLocal on destination
             0,                 // _amount: 0 because no funds are being transferred
             0,                 // _slippage: can be anything between 0-10000 because no funds are being transferred
@@ -70,7 +73,7 @@ contract ChildContract is IXReceiver {
             uint256 tokenQuantity = getTokenQuantity(voter);
             bytes memory callData = abi.encode(purpose, proposalId, voter, optionId, tokenQuantity);
             IConnext(connext).xcall{value: 0}(
-                parentContract.parrentDomain,         // _destination: Domain ID of the destination chain
+                parentContract.parentDomain,         // _destination: Domain ID of the destination chain
                 parentContract.parentContractAddress,            // _to: address of the target contract
                 address(0),        // _asset: use address zero for 0-value transfers
                 msg.sender,        // _delegate: address that can revert or forceLocal on destination
