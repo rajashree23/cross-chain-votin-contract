@@ -1,13 +1,5 @@
-# Sample Hardhat Project
+# xVote
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-GAS_REPORT=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+- xVote is a cross-chain governance voting solution that would aggregate the voting powers across different chains of the token holders
+- This project was ideated and built during ETHIndia'22- https://devfolio.co/projects/xvote-ecd5
+- It is built using Solidity and Connext API.
